@@ -5,7 +5,8 @@ import './task-list.css'
 
 export default class TaskList extends Component {
   render() {
-    const { todos, filter, onDeleted, onToggleCompleted, onEdit } = this.props
+    const { todos, filter, onDeleted, onToggleCompleted, onEdit, onToggleRunning } = this.props
+
     /* eslint-disable indent */
     const filteredTodos =
       filter === 'all'
@@ -25,6 +26,7 @@ export default class TaskList extends Component {
           onToggleCompleted={() => onToggleCompleted(id)}
           onEdit={(newText) => onEdit(id, newText)}
           created={item.created}
+          onToggleRunning={() => onToggleRunning(id)}
         />
       )
     })
