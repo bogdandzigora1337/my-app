@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 
 export default class TaskFilter extends Component {
   render() {
-    const { setFilter, filter } = this.props
+    const { filter, setFilter } = this.props
     const stateBtn = ['all', false, true]
 
     return (
@@ -30,13 +30,7 @@ export default class TaskFilter extends Component {
           </button>
         </li>
         <li>
-          <button
-            className={filter === stateBtn[2] ? 'selected' : ''}
-            type="button"
-            onClick={() => {
-              setFilter(true)
-            }}
-          >
+          <button className={filter === stateBtn[2] ? 'selected' : ''} type="button" onClick={() => setFilter(true)}>
             Completed
           </button>
         </li>

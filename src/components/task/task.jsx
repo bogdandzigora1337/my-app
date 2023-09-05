@@ -32,18 +32,32 @@ export default class Task extends Component {
     }
   }
 
-  render() {
-    const { label, onDeleted, onToggleCompleted, completed, created } = this.props
-    const { isEditing, editText } = this.state
+  formatTime = (sec) => {
+    const minutes = Math.floor(sec / 60)
+    const seconds = sec % 60
+    const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes
+    const formattedSeconds = seconds < 10 ? `0${seconds}` : seconds
+    return `${formattedMinutes}:${formattedSeconds}`
+  }
+
+  getTimeDisplay = () => {
+    const { created } = this.props
     const currentTime = new Date().getTime()
     const timeDifference = (currentTime - created) / 1000
-    let timeDisplay
+
     if (timeDifference < 60) {
-      timeDisplay = `${timeDifference.toFixed(0)} seconds ago`
-    } else if (timeDifference >= 60) {
+      return `${Math.floor(timeDifference)} second${timeDifference === 1 ? '' : 's'} ago`
+    } else {
       const minutes = Math.floor(timeDifference / 60)
-      timeDisplay = `${minutes} minute${minutes === 1 ? '' : 's'} ago`
+      return `${minutes} minute${minutes === 1 ? '' : 's'} ago`
     }
+  }
+
+  render() {
+    const { label, onDeleted, onToggleCompleted, completed, onToggleRunning, isRunning } = this.props
+    const { isEditing, editText } = this.state
+
+    const timeDisplay = this.getTimeDisplay()
 
     let classNames = ''
     if (completed) {
@@ -59,14 +73,21 @@ export default class Task extends Component {
           <input type="checkbox" className="toggle" onChange={onToggleCompleted} checked={completed} />
 
           <label>
-            <span className="description">{label}</span>
+            <span className="title">{label}</span>
+            <span className="description">
+              <button
+                className={`${completed ? null : isRunning ? 'icon  icon-pause' : 'icon  icon-play'}`}
+                onClick={onToggleRunning}
+              ></button>
+              <span style={{ marginLeft: '10px' }}>{this.formatTime(this.props.seconds)}</span>
+            </span>
             <span className="created">created {timeDisplay}</span>
           </label>
           <button className="icon icon-edit" onClick={this.handleEditClick}></button>
           <button className="icon icon-destroy" onClick={onDeleted}></button>
         </div>
 
-        {isEditing ? (
+        {isEditing && (
           <input
             type="text"
             className="edit"
@@ -75,7 +96,7 @@ export default class Task extends Component {
             onKeyDown={this.handleEditInputKeyDown}
             autoFocus
           />
-        ) : null}
+        )}
       </li>
     )
   }

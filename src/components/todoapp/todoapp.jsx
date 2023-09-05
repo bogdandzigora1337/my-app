@@ -8,6 +8,7 @@ import './todoapp.css'
 
 export default class TodoApp extends Component {
   maxId = 100
+  timerInterval = null
 
   state = {
     todoData: [],
@@ -25,6 +26,8 @@ export default class TodoApp extends Component {
       completed: false,
       id: this.maxId++,
       created: currentTime,
+      isRunning: false,
+      seconds: 0,
     }
   }
 
@@ -91,6 +94,39 @@ export default class TodoApp extends Component {
     })
   }
 
+  onToggleRunning = (id) => {
+    this.setState(({ todoData }) => {
+      const idx = todoData.findIndex((el) => el.id === id)
+
+      // Обновляем объект
+      const oldItem = todoData[idx]
+      const newItem = { ...oldItem, isRunning: !oldItem.isRunning }
+
+      // (completed === true), то останавливаем таймер
+      if (newItem.completed) {
+        clearInterval(this.timer)
+        newItem.isRunning = false
+      } else {
+        // Запускаем или останавливаем таймер
+        if (newItem.isRunning) {
+          this.timer = setInterval(() => {
+            newItem.seconds++ // Увеличиваем секунды при каждом интервале
+            this.setState({ seconds: newItem.seconds }) // Обновляем секунды в родительском компоненте
+          }, 1000)
+        } else {
+          clearInterval(this.timer)
+        }
+      }
+
+      // Конструируем новый массив задач
+      const before = todoData.slice(0, idx)
+      const after = todoData.slice(idx + 1)
+
+      const newArray = [...before, newItem, ...after]
+      return { todoData: newArray, isRunning: newItem.isRunning }
+    })
+  }
+
   onEdit = (id, newText) => {
     this.setState(({ todoData }) => {
       const idx = todoData.findIndex((el) => el.id === id)
@@ -117,6 +153,7 @@ export default class TodoApp extends Component {
             onDeleted={this.deleteItem}
             onToggleCompleted={this.onToggleCompleted}
             onEdit={this.onEdit}
+            onToggleRunning={this.onToggleRunning}
           />
           <Footer
             setFilter={this.setFilter}
