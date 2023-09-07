@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 
-import TaskFilter from '../tasks-filter'
+import TaskFilter from '../tasks-filter/tasks-filter'
 
 import './footer.css'
 

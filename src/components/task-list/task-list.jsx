@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 
-import Task from '../task'
+import Task from '../task/task'
 import './task-list.css'
 
 export default class TaskList extends Component {
