@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React, { useState, useEffect } from 'react'
 
 import NewTaskForm from '../new-task-form/new-task-form'
 import TaskList from '../task-list/task-list'
@@ -6,164 +6,108 @@ import Footer from '../footer/footer'
 
 import './todoapp.css'
 
-export default class TodoApp extends Component {
-  maxId = 100
-  timerInterval = null
+const TodoApp = () => {
+  const [maxId, setMaxId] = useState(100)
+  const [seconds, setSeconds] = useState(0)
+  const [todoData, setTodoData] = useState([])
+  const [filter, setFilter] = useState('all')
 
-  state = {
-    todoData: [],
-    filter: 'all',
-  }
+  let timerInterval = null
 
-  setFilter = (filter) => {
-    this.setState({ filter })
-  }
+  useEffect(() => {
+    return () => {
+      clearInterval(timerInterval)
+    }
+  }, [])
 
-  createTodoItem(label) {
+  const createTodoItem = (label) => {
     const currentTime = new Date().getTime()
     return {
       label,
       completed: false,
-      id: this.maxId++,
+      id: maxId,
       created: currentTime,
       isRunning: false,
       seconds: 0,
     }
   }
 
-  addItem = (text) => {
-    // проверка на пустую строку или пробелы
+  const addItem = (text) => {
     if (text.trim() === '') {
       return
     }
-
-    //generated id
-    const newItem = this.createTodoItem(text)
-
-    //add elem in array
-    this.setState(({ todoData }) => {
-      const newArr = [...todoData, newItem]
-      return {
-        todoData: newArr,
-      }
-    })
+    const newItem = createTodoItem(text)
+    setMaxId(maxId + 1)
+    setTodoData([...todoData, newItem])
   }
 
-  deleteItem = (id) => {
-    this.setState(({ todoData }) => {
-      const idx = todoData.findIndex((el) => el.id === id)
-
-      // [a, b, c, d, e]
-      // [a, b,  , d, e]
-      const before = todoData.slice(0, idx)
-      const after = todoData.slice(idx + 1)
-
-      const newArray = [...before, ...after]
-
-      return {
-        todoData: newArray,
-      }
-    })
+  const deleteItem = (id) => {
+    const updatedTodoData = todoData.filter((el) => el.id !== id)
+    setTodoData(updatedTodoData)
   }
 
-  deleteCompletedTasks = () => {
-    this.setState(({ todoData }) => {
-      let newArr = JSON.parse(JSON.stringify(todoData))
-      newArr = newArr.filter((el) => el.completed === false)
-
-      return {
-        todoData: newArr,
-      }
-    })
+  const deleteCompletedTasks = () => {
+    const updatedTodoData = todoData.filter((el) => !el.completed)
+    setTodoData(updatedTodoData)
   }
 
-  onToggleCompleted = (id) => {
-    this.setState(({ todoData }) => {
-      const idx = todoData.findIndex((el) => el.id === id)
-
-      //1. update object
-      const oldItem = todoData[idx]
-      const newItem = { ...oldItem, completed: !oldItem.completed }
-
-      //2. construct new array
-      const before = todoData.slice(0, idx)
-      const after = todoData.slice(idx + 1)
-
-      const newArray = [...before, newItem, ...after]
-      return { todoData: newArray }
-    })
+  const onToggleCompleted = (id) => {
+    const updatedTodoData = todoData.map((item) => (item.id === id ? { ...item, completed: !item.completed } : item))
+    setTodoData(updatedTodoData)
   }
 
-  onToggleRunning = (id) => {
-    this.setState(({ todoData }) => {
-      const idx = todoData.findIndex((el) => el.id === id)
-
-      // Обновляем объект
-      const oldItem = todoData[idx]
-      const newItem = { ...oldItem, isRunning: !oldItem.isRunning }
-
-      // (completed === true), то останавливаем таймер
-      if (newItem.completed) {
-        clearInterval(this.timer)
-        newItem.isRunning = false
-      } else {
-        // Запускаем или останавливаем таймер
-        if (newItem.isRunning) {
-          this.timer = setInterval(() => {
-            newItem.seconds++ // Увеличиваем секунды при каждом интервале
-            this.setState({ seconds: newItem.seconds }) // Обновляем секунды в родительском компоненте
-          }, 1000)
+  const onToggleRunning = (id) => {
+    const updatedTodoData = todoData.map((item) => {
+      if (item.id === id) {
+        const newItem = { ...item, isRunning: !item.isRunning }
+        if (newItem.completed) {
+          clearInterval(timerInterval)
+          newItem.isRunning = false
         } else {
-          clearInterval(this.timer)
+          if (newItem.isRunning) {
+            timerInterval = setInterval(() => {
+              newItem.seconds++
+              setSeconds(newItem.seconds)
+            }, 1000)
+          } else {
+            clearInterval(timerInterval)
+          }
         }
+        return newItem
       }
-
-      // Конструируем новый массив задач
-      const before = todoData.slice(0, idx)
-      const after = todoData.slice(idx + 1)
-
-      const newArray = [...before, newItem, ...after]
-      return { todoData: newArray, isRunning: newItem.isRunning }
+      return item
     })
+    setTodoData(updatedTodoData)
   }
 
-  onEdit = (id, newText) => {
-    this.setState(({ todoData }) => {
-      const idx = todoData.findIndex((el) => el.id === id)
-      const updatedTodoData = todoData.map((todo, index) => {
-        if (index === idx) {
-          return { ...todo, label: newText }
-        }
-        return todo
-      })
-      return {
-        todoData: updatedTodoData,
-      }
-    })
+  const editItem = (id, newText) => {
+    const updatedTodoData = todoData.map((item) => (item.id === id ? { ...item, label: newText } : item))
+    setTodoData(updatedTodoData)
   }
 
-  render() {
-    return (
-      <section className="todoapp">
-        <NewTaskForm addTaskWorm={this.addItem} onItemAdded={this.addItem} />
-        <section className="main">
-          <TaskList
-            todos={this.state.todoData}
-            filter={this.state.filter}
-            onDeleted={this.deleteItem}
-            onToggleCompleted={this.onToggleCompleted}
-            onEdit={this.onEdit}
-            onToggleRunning={this.onToggleRunning}
-          />
-          <Footer
-            setFilter={this.setFilter}
-            todos={this.state.todoData}
-            filter={this.state.filter}
-            onDeletedCompetedTasks={this.deleteCompletedTasks}
-            onAllItem={this.allItem}
-          ></Footer>
-        </section>
+  return (
+    <section className="todoapp">
+      <NewTaskForm addTaskWorm={addItem} onItemAdded={addItem} />
+      <section className="main">
+        <TaskList
+          todos={todoData}
+          filter={filter}
+          onDeleted={deleteItem}
+          onToggleCompleted={onToggleCompleted}
+          onEdit={editItem}
+          onToggleRunning={onToggleRunning}
+          seconds={seconds}
+        />
+        <Footer
+          setFilter={setFilter}
+          todos={todoData}
+          filter={filter}
+          onDeletedCompetedTasks={deleteCompletedTasks}
+          onAllItem={addItem}
+        ></Footer>
       </section>
-    )
-  }
+    </section>
+  )
 }
+
+export default TodoApp

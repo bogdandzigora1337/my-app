@@ -1,38 +1,38 @@
-import React, { Component } from 'react'
+import React, { useState, useEffect } from 'react'
 
 import './task.css'
 
-export default class Task extends Component {
-  constructor(props) {
-    super(props)
-    this.state = {
-      isEditing: false,
-      editText: this.props.label,
+const Task = (props) => {
+  const [isEditing, setIsEditing] = useState(false)
+  const [editText, setEditText] = useState(props.label)
+  const [timeDisplay, setTimeDisplay] = useState(getTimeDisplay())
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setTimeDisplay(getTimeDisplay())
+    }, 1000)
+
+    return () => {
+      clearInterval(intervalId)
     }
+  }, [])
+
+  const handleEditClick = () => {
+    setIsEditing(true)
   }
 
-  handleEditClick = () => {
-    this.setState({
-      isEditing: true,
-    })
+  const handleEditInputChange = (event) => {
+    setEditText(event.target.value)
   }
 
-  handleEditInputChange = (event) => {
-    this.setState({
-      editText: event.target.value,
-    })
-  }
-
-  handleEditInputKeyDown = (event) => {
+  const handleEditInputKeyDown = (event) => {
     if (event.key === 'Enter') {
-      this.setState({
-        isEditing: false,
-      })
-      this.props.onEdit(this.state.editText)
+      setIsEditing(false)
+      props.onEdit(editText)
     }
   }
 
-  formatTime = (sec) => {
+  const formatTime = (sec) => {
     const minutes = Math.floor(sec / 60)
     const seconds = sec % 60
     const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes
@@ -40,10 +40,9 @@ export default class Task extends Component {
     return `${formattedMinutes}:${formattedSeconds}`
   }
 
-  getTimeDisplay = () => {
-    const { created } = this.props
+  function getTimeDisplay() {
     const currentTime = new Date().getTime()
-    const timeDifference = (currentTime - created) / 1000
+    const timeDifference = (currentTime - props.created) / 1000
 
     if (timeDifference < 60) {
       return `${Math.floor(timeDifference)} second${timeDifference === 1 ? '' : 's'} ago`
@@ -53,51 +52,51 @@ export default class Task extends Component {
     }
   }
 
-  render() {
-    const { label, onDeleted, onToggleCompleted, completed, onToggleRunning, isRunning } = this.props
-    const { isEditing, editText } = this.state
+  const { label, onDeleted, onToggleCompleted, completed, onToggleRunning, isRunning, seconds } = props
 
-    const timeDisplay = this.getTimeDisplay()
-
-    let classNames = ''
-    if (completed) {
-      classNames += 'completed'
-    }
-    if (isEditing) {
-      classNames += 'editing'
-    }
-
-    return (
-      <li className={classNames}>
-        <div className="view">
-          <input type="checkbox" className="toggle" onChange={onToggleCompleted} checked={completed} />
-
-          <label>
-            <span className="title">{label}</span>
-            <span className="description">
-              <button
-                className={`${completed ? null : isRunning ? 'icon  icon-pause' : 'icon  icon-play'}`}
-                onClick={onToggleRunning}
-              ></button>
-              <span style={{ marginLeft: '10px' }}>{this.formatTime(this.props.seconds)}</span>
-            </span>
-            <span className="created">created {timeDisplay}</span>
-          </label>
-          <button className="icon icon-edit" onClick={this.handleEditClick}></button>
-          <button className="icon icon-destroy" onClick={onDeleted}></button>
-        </div>
-
-        {isEditing && (
-          <input
-            type="text"
-            className="edit"
-            value={editText}
-            onChange={this.handleEditInputChange}
-            onKeyDown={this.handleEditInputKeyDown}
-            autoFocus
-          />
-        )}
-      </li>
-    )
+  let classNames = ''
+  if (completed) {
+    classNames += 'completed'
   }
+  if (isEditing) {
+    classNames += 'editing'
+  }
+
+  return (
+    <li className={classNames}>
+      <div className="view">
+        <input type="checkbox" className="toggle" onChange={onToggleCompleted} checked={completed} />
+
+        <label>
+          <span className="title">{label}</span>
+          <span className="description">
+            <button
+              className={`${completed ? null : isRunning ? 'icon  icon-pause' : 'icon  icon-play'}`}
+              onClick={(evt) => {
+                evt.stopPropagation()
+                onToggleRunning()
+              }}
+            ></button>
+            <span style={{ marginLeft: '10px' }}>{formatTime(seconds)}</span>
+          </span>
+          <span className="created">created {timeDisplay}</span>
+        </label>
+        <button className="icon icon-edit" onClick={handleEditClick}></button>
+        <button className="icon icon-destroy" onClick={onDeleted}></button>
+      </div>
+
+      {isEditing && (
+        <input
+          type="text"
+          className="edit"
+          value={editText}
+          onChange={handleEditInputChange}
+          onKeyDown={handleEditInputKeyDown}
+          autoFocus
+        />
+      )}
+    </li>
+  )
 }
+
+export default Task
